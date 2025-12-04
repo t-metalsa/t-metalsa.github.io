@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        canvas {
+            display: none;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: green;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📷 Camera Capture</h1>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div>
+            <button id="captureBtn">Take Photo</button>
+        </div>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const message = document.getElementById('message');
+        const ctx = canvas.getContext('2d');
+
+        // Start camera
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' } 
+                });
+                video.srcObject = stream;
+                captureBtn.disabled = false;
+            } catch (err) {
+                message.textContent = 'Error accessing camera: ' + err.message;
+                message.style.color = 'red';
+            }
+        }
+
+        // Capture photo
+        captureBtn.addEventListener('click', () => {
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to blob and download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `photo-${Date.now()}.jpg`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                message.textContent = '✓ Photo downloaded!';
+                message.className = 'success';
+                setTimeout(() => message.textContent = '', 3000);
+            }, 'image/jpeg');
+        });
+
+        // Start camera on load
+        startCamera();
+    </script>
+</body>
+</html>
