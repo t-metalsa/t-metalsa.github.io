@@ -38,8 +38,8 @@
             background: #fff;
             padding: 14px 16px 10px 16px; /* more space above button, less below */
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: right;
+            align-items: right;
             border-bottom: 1px solid #eee;
         }
 
@@ -111,14 +111,14 @@
 <div id="message"></div>
 <br>
 <div class="camera-page">
+    <div class="controls">
+        <button id="captureBtn" disabled>Take Photo</button>
+    </div>
+
     <div class="camera-area">
         <div class="loading" id="loading">Initializing camera...</div>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
-    </div>
-
-    <div class="controls">
-        <button id="captureBtn" disabled>Take Photo</button>
     </div>
 
     <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
