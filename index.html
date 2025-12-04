@@ -5,89 +5,153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camera Capture</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: #f0f0f0;
         }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        video {
+        #video {
             width: 100%;
-            max-width: 500px;
-            border-radius: 8px;
-            margin: 1rem 0;
+            height: calc(100vh - 100px);
+            object-fit: cover;
+            display: block;
         }
         canvas {
             display: none;
         }
-        button {
+        .controls {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        #captureBtn {
             background: #007bff;
             color: white;
             border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
+            padding: 16px 48px;
+            font-size: 20px;
+            border-radius: 12px;
             cursor: pointer;
-            margin: 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.4);
         }
-        button:hover {
+        #captureBtn:active {
+            transform: scale(0.95);
             background: #0056b3;
         }
-        button:disabled {
-            background: #ccc;
+        #captureBtn:disabled {
+            background: #666;
             cursor: not-allowed;
+            box-shadow: none;
         }
-        .success {
-            color: green;
-            margin-top: 1rem;
+        #message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 200, 0, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none;
+            z-index: 1000;
+        }
+        /* Honeypot - hidden from real users */
+        #website {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 999;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📷 Camera Capture</h1>
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas"></canvas>
-        <div>
-            <button id="captureBtn">Take Photo</button>
-        </div>
-        <p id="message"></p>
+    <div class="loading" id="loading">Initializing camera...</div>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    
+    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+    
+    <div class="controls">
+        <button id="captureBtn" disabled>Take Photo</button>
     </div>
+    <div id="message"></div>
 
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const captureBtn = document.getElementById('captureBtn');
         const message = document.getElementById('message');
+        const loading = document.getElementById('loading');
+        const honeypot = document.getElementById('website');
         const ctx = canvas.getContext('2d');
 
         // Start camera
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user' } 
+                    video: { 
+                        facingMode: 'environment', // Back camera for iPad
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
                 });
                 video.srcObject = stream;
                 captureBtn.disabled = false;
+                loading.style.display = 'none';
             } catch (err) {
-                message.textContent = 'Error accessing camera: ' + err.message;
-                message.style.color = 'red';
+                loading.textContent = 'Error accessing camera. Please allow camera access.';
+                loading.style.color = '#ff4444';
             }
         }
 
+        // Format date and time for filename
+        function getFormattedDateTime() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            return `follow-up-photo-${month}.${day}.${year}-${hours}.${minutes}`;
+        }
+
         // Capture photo
-        captureBtn.addEventListener('click', () => {
+        captureBtn.addEventListener('click', async () => {
+            // Bot detection: check honeypot
+            if (honeypot.value !== '') {
+                // Bot detected - silently do nothing or redirect elsewhere
+                console.log('Bot detected');
+                return;
+            }
+
+            // Disable button to prevent double-clicks
+            captureBtn.disabled = true;
+            captureBtn.textContent = 'Saving...';
+            
             // Set canvas size to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -96,22 +160,46 @@
             ctx.drawImage(video, 0, 0);
             
             // Convert to blob and download
-            canvas.toBlob((blob) => {
+            canvas.toBlob(async (blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `photo-${Date.now()}.jpg`;
+                a.download = `${getFormattedDateTime()}.jpg`;
+                
+                // Trigger download
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
+                
+                // Show success message
+                message.textContent = '✓ Photo saved!';
+                message.style.display = 'block';
+                
+                // Wait a moment to ensure download starts
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Clean up
                 URL.revokeObjectURL(url);
                 
-                message.textContent = '✓ Photo downloaded!';
-                message.className = 'success';
-                setTimeout(() => message.textContent = '', 3000);
-            }, 'image/jpeg');
+                // Redirect after download
+                window.location.href = 'http://10.208.10.206/ResponseForm/pages/corrective-actions-embedded.html';
+                
+            }, 'image/jpeg', 0.95);
         });
 
         // Start camera on load
         startCamera();
+
+        // Additional bot detection: check for rapid interactions
+        let interactionTime = Date.now();
+        captureBtn.addEventListener('mousedown', () => {
+            const now = Date.now();
+            if (now - interactionTime < 100) {
+                // Suspiciously fast - likely a bot
+                honeypot.value = 'bot';
+            }
+            interactionTime = now;
+        });
     </script>
 </body>
 </html>
