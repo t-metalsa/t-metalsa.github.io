@@ -185,13 +185,7 @@
             await new Promise(r => setTimeout(r, 500));
             URL.revokeObjectURL(url);
 
-            const params = new URLSearchParams(window.location.search);
-            const returnUrl = params.get('return');
-
-            window.location.href = returnUrl
-                ? decodeURIComponent(returnUrl)
-                : '/ResponseForm/';
-
+            window.location.href = 'http://10.208.10.206/ResponseForm/pages/assembly-corrective-actions.html';
         }, 'image/jpeg', 0.95);
     });
 
