@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            background: #fff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+        }
+
+        .scanner-page {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .controls {
+            background: #fff;
+            padding: 14px 16px 10px 16px;
+            display: flex;
+            justify-content: right;
+            align-items: right;
+            border-bottom: 1px solid #eee;
+        }
+
+        #cancelBtn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        #cancelBtn:hover {
+            background: #5a6268;
+        }
+
+        .camera-area {
+            width: 100%;
+            background: #fff;
+            position: relative;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        canvas { display: none; }
+
+        .loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 22px;
+            z-index: 2;
+        }
+
+        #result-bar {
+            display: none;
+            padding: 16px 20px;
+            background: #f0fff4;
+            border-top: 2px solid #28a745;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #result-bar.visible {
+            display: flex;
+        }
+
+        #result-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #result-link {
+            font-size: 18px;
+            color: #007bff;
+            word-break: break-all;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        #result-link:hover {
+            color: #0056b3;
+        }
+
+        #go-btn {
+            align-self: flex-start;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #go-btn:hover {
+            background: #218838;
+        }
+
+        #scanning-hint {
+            text-align: center;
+            padding: 14px;
+            color: #888;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<br>
+<div class="scanner-page">
+    <div class="controls">
+        <button id="cancelBtn">Cancel</button>
+    </div>
+
+    <div class="camera-area">
+        <div class="loading" id="loading">Initializing camera...</div>
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <p id="scanning-hint">Point your camera at a QR code</p>
+
+    <div id="result-bar">
+        <span id="result-label">QR Code Detected</span>
+        <span id="result-link"></span>
+        <button id="go-btn">Go →</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const loading = document.getElementById('loading');
+    const resultBar = document.getElementById('result-bar');
+    const resultLink = document.getElementById('result-link');
+    const goBtn = document.getElementById('go-btn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const ctx = canvas.getContext('2d');
+
+    let scannedURL = null;
+    let scanning = true;
+
+    cancelBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            });
+            video.srcObject = stream;
+            video.addEventListener('loadedmetadata', () => {
+                loading.style.display = 'none';
+                requestAnimationFrame(scanFrame);
+            });
+        } catch (err) {
+            loading.textContent = 'Camera blocked. Enable permissions.';
+        }
+    }
+
+    function scanFrame() {
+        if (!scanning) return;
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert'
+            });
+
+            if (code && code.data) {
+                scanning = false;
+                scannedURL = code.data;
+                resultLink.textContent = scannedURL;
+                resultBar.classList.add('visible');
+                document.getElementById('scanning-hint').style.display = 'none';
+            }
+        }
+
+        requestAnimationFrame(scanFrame);
+    }
+
+    goBtn.addEventListener('click', () => {
+        if (scannedURL) {
+            // If it looks like a URL, navigate to it; otherwise open a search
+            try {
+                const url = new URL(scannedURL);
+                window.location.href = url.href;
+            } catch {
+                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(scannedURL)}`;
+            }
+        }
+    });
+
+    resultLink.addEventListener('click', () => {
+        goBtn.click();
+    });
+
+    startCamera();
+</script>
+</body>
+</html>
