@@ -23,35 +23,46 @@
 
         .scanner-page {
             width: 100%;
-            max-width: 900px;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
+            max-width: 1100px;
             min-height: 100vh;
-        }
-
-        .controls {
-            padding: 14px 16px 10px 16px;
-            display: flex;
-            justify-content: flex-end;
-            border-bottom: 1px solid #eee;
             background: #fff;
-        }
-
-        #cancelBtn {
-            background: #6c757d;
-            color: #fff;
-            border: none;
-            padding: 18px 40px;
-            font-size: 22px;
-            border-radius: 12px;
-            cursor: pointer;
+            padding: 20px 16px 24px;
         }
 
         #reader-wrap {
             width: 100%;
-            padding: 16px;
+            max-width: 700px;
+            margin: 20px auto 0;
             background: #fff;
+            position: relative;
+        }
+
+        .overlay-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+        }
+
+        #cancelBtn {
+            background: rgba(108,117,125,0.92);
+            color: #fff;
+            border: none;
+            padding: 14px 24px;
+            font-size: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        #cancelBtn {
+            width: 100%;
+            background: #6c757d;
+            color: #fff;
+            border: none;
+            padding: 18px 20px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
         }
 
         #reader {
@@ -72,11 +83,11 @@
 </head>
 <body>
     <div class="scanner-page">
-        <div class="controls">
-            <button id="cancelBtn" type="button">Cancel</button>
-        </div>
-
         <div id="reader-wrap">
+            <div class="overlay-actions">
+                <button id="cancelBtn" type="button">Cancel</button>
+            </div>
+
             <div id="reader"></div>
         </div>
 

@@ -27,27 +27,46 @@
 
         .camera-page {
             width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
+            max-width: 1100px;
             background: #fff;
+            padding: 20px 16px 24px;
         }
 
-        /* Top bar button (zero gap) */
-        .controls {
+        .camera-area {
+            width: 100%;
+            max-width: 700px;
+            margin: 20px auto 0;
             background: #fff;
-            padding: 14px 16px 10px 16px; /* more space above button, less below */
-            display: flex;
-            justify-content: right;
-            align-items: right;
-            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .overlay-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
         }
 
         #captureBtn {
+            background: rgba(0,123,255,0.92);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        #captureBtn:disabled {
+            background: rgba(204,204,204,0.95);
+        }
+
+        #captureBtn {
+            width: 100%;
             background: #007bff;
             color: white;
             border: none;
-            padding: 18px 40px;
+            padding: 18px 20px;
             font-size: 22px;
             border-radius: 12px;
             cursor: pointer;
@@ -55,14 +74,6 @@
 
         #captureBtn:disabled {
             background: #ccc;
-        }
-
-        /* Camera window directly under the button with no gap */
-        .camera-area {
-            width: 100%;
-            background: #fff;
-            height: auto;
-            position: relative;
         }
 
         #video {
@@ -111,11 +122,11 @@
 <div id="message"></div>
 <br>
 <div class="camera-page">
-    <div class="controls">
-        <button id="captureBtn" disabled>Take Photo</button>
-    </div>
-
     <div class="camera-area">
+        <div class="overlay-actions">
+            <button id="captureBtn" disabled>Take Photo</button>
+        </div>
+
         <div class="loading" id="loading">Initializing camera...</div>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
